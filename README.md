@@ -1,10 +1,6 @@
 # Chat Server
 
-This project is an implementation of a simple chat server, using a RESTful protocol with JSON. It should have companion
-repositories for compatible clients.
-
-The repository is currently private, because the students have the job of implementing a compatible server and/or
-compatible clients. And we don't just want to see our code with variables renamed...
+This project is an implementation of a simple chat server, using a RESTful protocol with JSON. It is the basis for possible student projects.
 
 ## Documentation
 
