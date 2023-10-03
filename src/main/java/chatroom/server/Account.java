@@ -6,22 +6,20 @@ import java.io.*;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a registered client, i.e., one that has defined a
- * username and password
- * 
+ * username and password.
  * At the class level, we maintain a list of all registered clients.
- * 
  * Passwords are hashed securely, using one of the algorithms built into Java.
- * If this algorithm somehow not exist, this is catastrophic, and we stop the
+ * If this algorithm somehow does not exist, this is catastrophic, and we stop the
  * server.
  */
 public class Account implements Serializable {
-	private static final long serialVersionUID = 1;
-	private static Logger logger = Logger.getLogger("");
+	private static final Logger logger = Logger.getLogger("");
 
 	private static final ArrayList<Account> accounts = new ArrayList<>();
 	private static final SecureRandom rand = new SecureRandom();
@@ -42,14 +40,19 @@ public class Account implements Serializable {
 	}
 
 	/**
-	 * Remove a account from our list of valid accounts
+	 * Remove an account from our list of valid accounts
 	 */
 	public static void remove(Account account) {
 		synchronized (accounts) {
-			for (Iterator<Account> i = accounts.iterator(); i.hasNext();) {
-				if (account == i.next()) i.remove();
-			}
+			accounts.removeIf(a -> a.equals(account));
 		}
+	}
+
+	/**
+	 * Return a list of all registered users
+	 */
+	public static List<String> listAccounts() {
+		return accounts.stream().map( a -> a.username ).collect(Collectors.toList());
 	}
 
 	/**
@@ -71,51 +74,8 @@ public class Account implements Serializable {
 		synchronized (accounts) {
 			Instant expiry = Instant.now().minusSeconds(3 * 86400); // 3 days
 			logger.fine("Cleanup accounts: " + accounts.size() + " accounts registered");
-			for (Iterator<Account> i = accounts.iterator(); i.hasNext();) {
-				Account account = i.next();
-				if (account.lastLogin.isBefore(expiry)) {
-					logger.fine("Cleanup accounts: removing account " + account.getUsername());
-					i.remove();
-				}
-			}
+			accounts.removeIf(a -> a.lastLogin.isBefore(expiry));
 			logger.fine("Cleanup accounts: " + accounts.size() + " accounts registered");
-		}
-	}
-
-	/**
-	 * Save accounts to disk -- called by cleanup thread
-	 */
-	public static void saveAccounts() {
-		File accountFile = new File(Server.getHome() + "accounts.sav");
-		try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(accountFile))) {
-			synchronized (accounts) {
-				out.writeInt(accounts.size());
-				for (Account account : accounts) {
-					out.writeObject(account);
-				}
-				out.flush();
-				out.close();
-			}
-		} catch (IOException e) {
-			logger.severe("Unable to save accounts: " + e.getMessage());
-		}
-	}
-
-	/**
-	 * Read accounts at program start. No synchronization needed, since no threads
-	 * are running
-	 */
-	public static void readAccounts() {
-		File accountFile = new File(Server.getHome() + "accounts.sav");
-		try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(accountFile))) {
-			int num = in.readInt();
-			for (int i = 0; i < num; i++) {
-				Account account = (Account) in.readObject();
-				accounts.add(account);
-				logger.fine("Loaded account " + account.getUsername());
-			}
-		} catch (Exception e) {
-			logger.severe("Unable to read accounts: " + e.getMessage());
 		}
 	}
 
@@ -160,13 +120,10 @@ public class Account implements Serializable {
 	}
 
 	/**
-	 * There are many sources of info on how to securely hash passwords. I'm not a
-	 * crypto expert, so I follow the recommendations of the experts. Here are two
-	 * examples:
-	 * 
-	 * https://crackstation.net/hashing-security.htm
-	 * 
-	 * https://howtodoinjava.com/security/how-to-generate-secure-password-hash-md5-sha-pbkdf2-bcrypt-examples/
+	 * There are many sources of info on how to securely hash passwords. I'm not a crypto expert,
+	 * so I follow the recommendations of the experts. Here are two examples:
+	 * <a href="https://crackstation.net/hashing-security.htm">...</a>
+	 * <a href="https://howtodoinjava.com/security/how-to-generate-secure-password-hash-md5-sha-pbkdf2-bcrypt-examples/">...</a>
 	 */
 	private String hash(String password) {
 		try {
@@ -182,10 +139,10 @@ public class Account implements Serializable {
 		}
 	}
 
-	// From:
-	// https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
-	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
-
+	/**
+	 * Convert byte-array to a hex string
+	 * <a href="https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java">...</a>
+	 */
 	public static String bytesToHex(byte[] bytes) {
 		char[] hexChars = new char[bytes.length * 2];
 		for (int j = 0; j < bytes.length; j++) {
@@ -195,4 +152,5 @@ public class Account implements Serializable {
 		}
 		return new String(hexChars);
 	}
+	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 }

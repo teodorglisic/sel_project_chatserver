@@ -1,50 +1,69 @@
 package chatroom.server;
 
-import chatroom.message.Message;
-import chatroom.message.MessageError;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.Socket;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
- * This class represents a client, from the perspective of the server. We
- * communicate with the client using a socket. If the client is logged in, then
- * we have a token representing the client's authorization to use the server.
- * 
- * The first time any client connects, we create the list to store clients, and
- * we start a "cleanup" thread that discards clients that have not sent or
- * received any messages in a long time.
+ * This class represents a client, from the perspective of the server. A client
+ * is a user with a currently valid token. We record here the username, the token
+ * and an array of messages that need to be sent to the user.
  */
-public class Client implements Sendable {
-	private static Logger logger = Logger.getLogger("");
+public class Client {
+	private static final Logger logger = Logger.getLogger("");
 	private static final ArrayList<Client> clients = new ArrayList<>();
 
-	private Account account = null;
-	private String token = null;
-	private Socket socket;
-	private boolean clientReachable = true;
-	private Instant lastUsage;
+	private final String username;
+	private final String token;
+	private final List<Message> messages = new ArrayList<>();
+	private Instant lastUsage = Instant.now();
+
+	// Messages pending for this user. Chatroom is null for direct messages
+	// from a user. The username is the sending user. The message is obvious.
+	private record Message(String username, String message) {}
 
 	/**
 	 * Add a new client to our list of active clients.
 	 */
-	public static void add(Client client) {
+	public static void add(String username, String token) {
 		synchronized (clients) {
-			clients.add(client);
+			clients.add(new Client(username, token));
+		}
+	}
+
+	/**
+	 * Remove a client (e.g., when they logout)
+	 */
+	public static void remove(String token) {
+		synchronized (clients) {
+			clients.removeIf(c -> c.token.equals(token));
 		}
 	}
 
 	/**
 	 * Returns a client, found by username
 	 */
-	public static Client exists(String username) {
+	public static Client findByUsername(String username) {
 		synchronized (clients) {
 			for (Client c : clients) {
-				if (c.getAccount() != null && c.getName().equals(username)) return c;
+				if (c.username.equals(username)) return c;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Returns a client, found by token
+	 */
+	public static Client findByToken(String token) {
+		synchronized (clients) {
+			for (Client c : clients) {
+				if (c.token.equals(token)) return c;
 			}
 		}
 		return null;
@@ -55,110 +74,65 @@ public class Client implements Sendable {
 	 */
 	public static void cleanupClients() {
 		synchronized (clients) {
-			Instant expiryLoggedOut = Instant.now().minusSeconds(300);
-			Instant expiryLoggedIn = Instant.now().minusSeconds(3600);
+			Instant expiry = Instant.now().minusSeconds(3600); // Expiry one hour
 			logger.fine("Cleanup clients: " + clients.size() + " clients registered");
-			for (Iterator<Client> i = clients.iterator(); i.hasNext();) {
-				Client client = i.next();
-				if (client.token == null && client.lastUsage.isBefore(expiryLoggedOut)
-						|| client.token != null && client.lastUsage.isBefore(expiryLoggedIn)) {
-					logger.fine("Cleanup clients: removing client " + client.getName());
-					// Close the socket, ignoring any errors, and remove the client
-					try {
-						if (client.socket != null) client.socket.close();
-					} catch (IOException e) {
-						// We don't care about any errors
-					}
-					i.remove();
-				}
-			}
+			clients.removeIf( c -> c.lastUsage.isBefore(expiry));
 			logger.fine("Cleanup clients: " + clients.size() + " clients registered");
 		}
+	}
+
+	/**
+	 * Return a list of all clients
+	 */
+	public static List<String> listClients() {
+		return clients.stream().map( c -> c.username ).collect(Collectors.toList());
 	}
 
 	/**
 	 * Create a new client object, communicating over the given socket. Immediately
 	 * start a thread to receive messages from the client.
 	 */
-	public Client(Socket socket) {
-		this.socket = socket;
-		this.lastUsage = Instant.now();
-
-		// Create thread to read incoming messages
-		Runnable r = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					while (clientReachable) {
-						Message msg = Message.receive(socket);
-
-						// Note the syntax "Client.this" - writing "this" would reference the Runnable
-						// object
-						if (msg != null)
-							msg.process(Client.this);
-						else { // Invalid message or broken socket
-							Client.this.send(new MessageError());
-						}
-
-						lastUsage = Instant.now();
-					}
-				} catch (Exception e) {
-					logger.info("Client " + Client.this.getName() + " disconnected");
-				} finally {
-					// When the client is no longer reachable, remove authentication and account
-					token = null;
-					account = null;
-				}
-			}
-		};
-		Thread t = new Thread(r);
-		t.start();
-		logger.info("New client created: " + this.getName());
+	public Client(String username, String token) {
+		this.username = username;
+		this.token = token;
 	}
 
-	@Override // Sendable
 	public String getName() {
-		String name = null;
-		if (account != null) name = account.getUsername();
-		return name;
-	}
-
-	/**
-	 * Send a message to this client. In case of an exception, log the client out.
-	 */
-	@Override // Sendable
-	public void send(Message msg) {
-		try {
-			msg.send(socket);
-			lastUsage = Instant.now();
-		} catch (IOException e) {
-			logger.warning("Client " + Client.this.getName() + " unreachable; logged out");
-			this.token = null;
-			clientReachable = false;
-		}
-	}
-
-	public Account getAccount() {
-		return account;
-	}
-
-	public void setAccount(Account account) {
-		this.account = account;
+		return username;
 	}
 
 	public String getToken() {
 		return token;
 	}
 
-	public void setToken(String token) {
-		this.token = token;
-	}
-
-	public Socket getSocket() {
-		return socket;
-	}
-
 	public Instant getLastUsage() {
 		return lastUsage;
+	}
+
+	// Called when the client takes an action
+	private void updateLastUsage() {
+		this.lastUsage = Instant.now();
+	}
+
+	/**
+	 * Send a message to this client.
+	 */
+	public void send(String username, String message) {
+		messages.add(new Message(username, message));
+	}
+
+	/**
+	 * Retrieve messages for this client
+	 */
+	public JSONArray getMessages() {
+		JSONArray jsonMessages = new JSONArray();
+		for (Message msg : messages) {
+			JSONObject jsonMsg = (new JSONObject())
+					.put("username", msg.username)
+					.put("message", msg.message);
+			jsonMessages.put(jsonMsg);
+		}
+		updateLastUsage();
+		return jsonMessages;
 	}
 }

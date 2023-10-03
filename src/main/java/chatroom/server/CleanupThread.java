@@ -20,11 +20,6 @@ public class CleanupThread extends Thread {
 
 			// Clean up accounts
 			Account.cleanupAccounts();
-			Account.saveAccounts();
-
-			// Clean up chatrooms
-			Chatroom.cleanupChatrooms();
-			Chatroom.saveChatrooms();
 
 			System.gc();
 
