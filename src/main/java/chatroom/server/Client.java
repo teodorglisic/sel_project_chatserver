@@ -118,7 +118,9 @@ public class Client {
 	 * Send a message to this client.
 	 */
 	public void send(String username, String message) {
-		messages.add(new Message(username, message));
+		synchronized (messages) {
+			messages.add(new Message(username, message));
+		}
 	}
 
 	/**
@@ -126,11 +128,14 @@ public class Client {
 	 */
 	public JSONArray getMessages() {
 		JSONArray jsonMessages = new JSONArray();
-		for (Message msg : messages) {
-			JSONObject jsonMsg = (new JSONObject())
-					.put("username", msg.username)
-					.put("message", msg.message);
-			jsonMessages.put(jsonMsg);
+		synchronized (messages) {
+			for (Message msg : messages) {
+				JSONObject jsonMsg = (new JSONObject())
+						.put("username", msg.username)
+						.put("message", msg.message);
+				jsonMessages.put(jsonMsg);
+			}
+			messages.clear();
 		}
 		updateLastUsage();
 		return jsonMessages;

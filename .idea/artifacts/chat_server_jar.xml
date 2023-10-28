@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="chat-server:jar">
+  <artifact type="jar" build-on-make="true" name="chat-server:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/chat_server_jar</output-path>
     <root id="archive" name="chat-server.jar">
       <element id="module-output" name="chat-server" />
