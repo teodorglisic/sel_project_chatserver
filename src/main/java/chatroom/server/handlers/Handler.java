@@ -19,6 +19,18 @@ public abstract class Handler implements HttpHandler  {
             // Empty response with an optimistic status-code
             HandlerResponse response = new HandlerResponse();
 
+            // Web clients are sending cross-origin, because the client is not running on this server.
+            // In that case, the browser sends a pre-flight requests, to ensure that a cross-origin
+            // request will be accepted. This is an OPTIONS command, and must be answers with headers
+            // that show what cross-origin commands are acceptable.
+            if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+                httpExchange.sendResponseHeaders(204, -1); // No content for OPTIONS requests
+                return;
+            }
+
+            // For all other requests, our usual processing
             String requestMethod = httpExchange.getRequestMethod();
             if (requestMethod.equals("GET")) {
                 handleGet(httpExchange, response);
@@ -29,6 +41,12 @@ public abstract class Handler implements HttpHandler  {
                 response.statusCode = 418;
                 response.jsonOut.put("Error", "Invalid HTTP request method");
             }
+
+            // We include the CORS headers for all normal requests as well,
+            // to ensure that web clients are happy.
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
             // Send the response
             String textOut = response.jsonOut.toString();
