@@ -10,18 +10,23 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+/**
+ * This class provice the top-level functionality for answering requests.
+ * It is extended by classes serving specific paths.
+ *
+ * Note: The two segments of code dealing with CORS are only necessary, if
+ * we are dealing with web clients. Browsers will block cross-origin requests,
+ * unless the server explicitly says that these are allowed.
+ */
 public abstract class Handler implements HttpHandler  {
     public void handle(HttpExchange httpExchange) throws IOException {
         try (// Get the input and output streams
              BufferedReader in = new BufferedReader(new InputStreamReader(httpExchange.getRequestBody()));
              OutputStreamWriter out = new OutputStreamWriter(httpExchange.getResponseBody())
         ) {
-            // Empty response with an optimistic status-code
-            HandlerResponse response = new HandlerResponse();
-
             // Web clients are sending cross-origin, because the client is not running on this server.
-            // In that case, the browser sends a pre-flight requests, to ensure that a cross-origin
-            // request will be accepted. This is an OPTIONS command, and must be answers with headers
+            // In that case, the browser sends a pre-flight request, to ensure that a cross-origin
+            // request will be accepted. This is an OPTIONS command, and must be answered with headers
             // that show what cross-origin commands are acceptable.
             if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -31,6 +36,10 @@ public abstract class Handler implements HttpHandler  {
             }
 
             // For all other requests, our usual processing
+
+            // Empty response with an optimistic status-code
+            HandlerResponse response = new HandlerResponse();
+
             String requestMethod = httpExchange.getRequestMethod();
             if (requestMethod.equals("GET")) {
                 handleGet(httpExchange, response);
