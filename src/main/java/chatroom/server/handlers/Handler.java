@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 /**
- * This class provice the top-level functionality for answering requests.
+ * This class provides the top-level functionality for answering requests.
  * It is extended by classes serving specific paths.
  *
  * Note: The two segments of code dealing with CORS are only necessary, if

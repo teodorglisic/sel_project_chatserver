@@ -1,6 +1,7 @@
 # Chat Server
 
-This project is an implementation of a simple chat server, using a RESTful protocol with JSON. It is the basis for possible student projects.
+This project is an implementation of a simple chat server, using a RESTful protocol with JSON.
+It is the basis for possible student projects.
 
 ## Documentation
 
@@ -17,7 +18,8 @@ IntelliJ:
 
 ## Running the server
 
-The server runs as a standalong Java application. By default, it uses port 50001.
+The server runs as a standalone Java application. By default, it uses port 50001,
+but this can be set on the command line.
 To run the server from the command line, enter: <code>java -jar chat-server.jar</code>
 
 To run the server as a permanent service <code>xyz</code>
