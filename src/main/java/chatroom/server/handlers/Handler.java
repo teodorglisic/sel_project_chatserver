@@ -19,6 +19,7 @@ import java.io.OutputStreamWriter;
  * unless the server explicitly says that these are allowed.
  */
 public abstract class Handler implements HttpHandler  {
+    @Override
     public void handle(HttpExchange httpExchange) throws IOException {
         try (// Get the input and output streams
              BufferedReader in = new BufferedReader(new InputStreamReader(httpExchange.getRequestBody()));
@@ -29,38 +30,36 @@ public abstract class Handler implements HttpHandler  {
             // request will be accepted. This is an OPTIONS command, and must be answered with headers
             // that show what cross-origin commands are acceptable.
             if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
                 httpExchange.sendResponseHeaders(204, -1); // No content for OPTIONS requests
-                return;
+            } else { // For all other requests, our usual processing
+                // Empty response with an optimistic status-code
+                HandlerResponse response = new HandlerResponse();
+
+                String requestMethod = httpExchange.getRequestMethod();
+                if (requestMethod.equals("GET")) {
+                    handleGet(httpExchange, response);
+                } else if (requestMethod.equals("POST")) {
+                    JSONObject JSONin = readJSON(in);
+                    handlePost(httpExchange, JSONin, response);
+                } else { // Unsupported request type
+                    response.statusCode = 418;
+                    response.jsonOut.put("Error", "Invalid HTTP request method");
+                }
+
+                // We include the CORS headers for all normal requests as well,
+                // to ensure that web clients are happy.
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+
+                // Send the response
+                String textOut = response.jsonOut.toString();
+                httpExchange.sendResponseHeaders(response.statusCode, textOut.length());
+                out.write(textOut);
             }
-
-            // For all other requests, our usual processing
-
-            // Empty response with an optimistic status-code
-            HandlerResponse response = new HandlerResponse();
-
-            String requestMethod = httpExchange.getRequestMethod();
-            if (requestMethod.equals("GET")) {
-                handleGet(httpExchange, response);
-            } else if (requestMethod.equals("POST")) {
-                JSONObject JSONin = readJSON(in);
-                handlePost(httpExchange, JSONin, response);
-            } else { // Unsupported request type
-                response.statusCode = 418;
-                response.jsonOut.put("Error", "Invalid HTTP request method");
-            }
-
-            // We include the CORS headers for all normal requests as well,
-            // to ensure that web clients are happy.
-            httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
-
-            // Send the response
-            String textOut = response.jsonOut.toString();
-            httpExchange.sendResponseHeaders(response.statusCode, textOut.length());
-            out.write(textOut);
         }
     }
 
