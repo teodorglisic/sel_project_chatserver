@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class provides the top-level functionality for answering requests.
@@ -54,10 +55,11 @@ public abstract class Handler implements HttpHandler  {
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
                 httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+                httpExchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
 
-                // Send the response
+                // Send the response. We need the length in bytes, in case of international characters
                 String textOut = response.jsonOut.toString();
-                httpExchange.sendResponseHeaders(response.statusCode, textOut.length());
+                httpExchange.sendResponseHeaders(response.statusCode, textOut.getBytes(StandardCharsets.UTF_8).length);
                 out.write(textOut);
             }
         }
