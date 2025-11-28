@@ -37,7 +37,7 @@ public class Server {
 			server.createContext("/ping", new PingHandler()); // ping with (POST) and without (GET) a token
 			server.createContext("/chat", new ChatHandler()); // send and receive messages
 			server.createContext("/user", new UserHandler()); // user online
-
+            server.createContext("/chatroom", new ChatroomHandler());
 			// If desired, use multiple threads for processing (here, with 4 threads)
 			server.setExecutor(Executors.newFixedThreadPool(4));
 
