@@ -79,7 +79,15 @@ public class ChatroomHandler extends Handler {
     private void deleteChatroom(String token, String chatroomName, HandlerResponse response) {
     }
 
-    private void createChatroom(String chatroomName, String token, HandlerResponse response) {
+    private void createChatroom(String chatroomName, String token, HandlerResponse response) throws Exception {
+        Client user = Client.findByToken(token);
+        if (user != null) {
+            if (Chatroom.listChatrooms().stream().anyMatch(cr -> cr.equals(chatroomName))) response.jsonOut.put("warning", "Chatroom with name " + chatroomName + " already exists, please join with /chatroom/join.");
+            Chatroom chatroom = new Chatroom(user, chatroomName);
+            response.jsonOut.put("chatroomName", chatroom.getChatroomName());
+        } else {
+            throw new Exception("User with token does not exist.");
+        }
     }
 
 
