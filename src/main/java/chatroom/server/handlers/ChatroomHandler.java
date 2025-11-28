@@ -76,7 +76,21 @@ public class ChatroomHandler extends Handler {
     private void joinChatroom(String token, String chatroomName, HandlerResponse response) {
     }
 
-    private void deleteChatroom(String token, String chatroomName, HandlerResponse response) {
+    private void deleteChatroom(String token, String chatroomName, HandlerResponse response) throws Exception {
+        Client user = Client.findByToken(token);
+        if (user != null) {
+            Optional<Chatroom> chatroomToOptional = Chatroom.listChatrooms().stream().filter(chatroom -> chatroom.getUser().getName().equals(user.getName())).filter(chatroom -> chatroom.getChatroomName().equals(chatroomName)).findFirst();
+
+            if (chatroomToOptional.isPresent()) {
+                Chatroom chatroomToDelete = chatroomToOptional.get();
+                Chatroom.deleteChatroom(chatroomToDelete);
+                response.jsonOut.put("deleted", true);
+            } else {
+                response.jsonOut.put("deleted", false);
+            }
+        } else {
+            throw new Exception("User with token does not exist.");
+        }
     }
 
     private void createChatroom(String chatroomName, String token, HandlerResponse response) throws Exception {

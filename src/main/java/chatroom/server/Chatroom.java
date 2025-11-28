@@ -19,8 +19,9 @@ public class Chatroom {
         members.add(user);
     }
 
-
-
+    public static void deleteChatroom(Chatroom chatroomToDelete) {
+        chatrooms.removeIf(chatroom -> chatroom.equals(chatroomToDelete));
+    }
 
 
     @Override
@@ -44,4 +45,7 @@ public class Chatroom {
         return chatrooms;
     }
 
+    public Client getUser() {
+        return user;
+    }
 }
