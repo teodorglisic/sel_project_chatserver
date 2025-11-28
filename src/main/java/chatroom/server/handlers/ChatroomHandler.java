@@ -28,8 +28,59 @@ public class ChatroomHandler extends Handler {
 
     }
 
+    @Override
+    protected void handlePost(HttpExchange httpExchange, JSONObject JSONin, HandlerResponse response) {
+        String mapping = httpExchange.getRequestURI().toString();
 
+        String chatroomName = readString(JSONin, "chatroomName");
+        String token = readString(JSONin, "token");
+        String message = readString(JSONin, "message");
+        try {
+            switch (mapping) {
+                case "/chatroom/create":
+                    createChatroom(chatroomName, token, response);
+                    break;
+                case "/chatroom/delete":
+                    deleteChatroom(token, chatroomName, response);
+                    break;
+                case "/chatroom/join":
+                    joinChatroom(token, chatroomName, response);
+                    break;
+                case "/chatroom/leave":
+                    leaveChatroom(token, chatroomName, response);
+                    break;
+                case "/chatroom/users":
+                    getChatroomUsers(chatroomName, response);
+                    break;
+                case "/chatroom/send":
+                    sendChatroomMessage(token, chatroomName, message, response);
+                    break;
 
+                default:
+                    throw new Exception("No such mapping");
+            }
+        } catch (Exception e) {
+            response.jsonOut.put("Error", e.toString());
+        }
+    }
+
+    private void sendChatroomMessage(String token, String chatroomName, String message, HandlerResponse response) {
+    }
+
+    private void getChatroomUsers(String chatroomName, HandlerResponse response) {
+    }
+
+    private void leaveChatroom(String token, String chatroomName, HandlerResponse response) {
+    }
+
+    private void joinChatroom(String token, String chatroomName, HandlerResponse response) {
+    }
+
+    private void deleteChatroom(String token, String chatroomName, HandlerResponse response) {
+    }
+
+    private void createChatroom(String chatroomName, String token, HandlerResponse response) {
+    }
 
 
     private void getChatrooms(HandlerResponse response) {
