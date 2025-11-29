@@ -20,7 +20,7 @@ public class Client {
 
 	private final String username;
 	private final String token;
-	private final List<Message> messages = new ArrayList<>();
+	private List<Message> messages = new ArrayList<>();
 	private Instant lastUsage = Instant.now();
 
 
@@ -32,6 +32,21 @@ public class Client {
 			clients.add(new Client(username, token));
 		}
 	}
+
+    /**
+     *
+     * @param username
+     * @param token
+     * @param cachedMessages
+     *
+     * Method to add a cached client using the second constructor
+     */
+
+    public static void addCachedClient(String username, String token, List<Message> cachedMessages){
+        synchronized (clients) {
+            clients.add(new Client(username, token, cachedMessages));
+        }
+    }
 
 	/**
 	 * Remove a client (e.g., when they logout)
@@ -94,6 +109,19 @@ public class Client {
 		this.token = token;
 	}
 
+    /**
+     * This constructor is for the accounts, that logged in again and created a new client session
+     * @param username
+     * @param token
+     * @param cachedMessages
+     */
+
+    public Client(String username, String token, List<Message> cachedMessages) {
+        this.username = username;
+        this.token = token;
+        this.messages = cachedMessages;
+    }
+
 	public String getName() {
 		return username;
 	}
@@ -149,6 +177,12 @@ public class Client {
     public void clearMessages() {
         messages.clear();
     }
+
+    public List<Message> getMessagesForCache() {
+        return this.messages;
+    }
+
+
 
     // Messages pending for this user. Chatroom is null for direct messages
 	// from a user. The username is the sending user. The message is obvious.
