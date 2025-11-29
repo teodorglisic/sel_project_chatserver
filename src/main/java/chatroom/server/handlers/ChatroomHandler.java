@@ -107,11 +107,11 @@ public class ChatroomHandler extends Handler {
         Chatroom chatroom = Chatroom.findChatroomByName(chatroomName);
         if (chatroom == null){
             response.jsonOut.put("left", false);
-            response.jsonOut.put("error", "Chatroom not found");
+            throw new Exception("Chatroom with name\"" + chatroomName + "\" does not exist");
+        } else {
+            boolean left = chatroom.removeMember(user);
+            response.jsonOut.put("left",left);
         }
-
-        boolean left = chatroom.removeMember(user);
-        response.jsonOut.put("left",left);
     }
 
     // DT
