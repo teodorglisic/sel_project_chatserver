@@ -135,7 +135,6 @@ public class Client {
 				}
 				jsonMessages.put(jsonMsg);
 			}
-			messages.clear();
 		}
 		updateLastUsage();
 		return jsonMessages;
@@ -147,7 +146,11 @@ public class Client {
 		}
 	}
 
-	// Messages pending for this user. Chatroom is null for direct messages
+    public void clearMessages() {
+        messages.clear();
+    }
+
+    // Messages pending for this user. Chatroom is null for direct messages
 	// from a user. The username is the sending user. The message is obvious.
 	protected record Message(String username, String message, String chatroom) {}
 }

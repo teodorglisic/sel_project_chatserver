@@ -50,6 +50,7 @@ public class ChatHandler extends Handler {
         Client client = Client.findByToken(token);
         if (client == null) throw new Exception("Invalid token");
         response.jsonOut.put("messages", client.getMessages());
+        client.clearMessages();
     }
 }
 
