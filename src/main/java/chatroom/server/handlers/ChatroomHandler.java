@@ -65,6 +65,23 @@ public class ChatroomHandler extends Handler {
     }
 
     private void sendChatroomMessage(String token, String chatroomName, String message, HandlerResponse response) {
+        Chatroom chatroom = Chatroom.findChatroomByName(chatroomName);
+        if (chatroom == null){
+            response.jsonOut.put("sent", false);
+        }
+
+        Client messageSender = Client.findByToken(token);
+        if (messageSender == null){
+            response.jsonOut.put("sent", false);
+        }
+
+        for (Client chatroomMember : chatroom.getMembers()){
+
+            if (chatroomMember != messageSender) {chatroomMember.sendChatroom(messageSender.getName(), message, chatroomName);}
+
+        }
+
+        response.jsonOut.put("sent",true);
     }
 
     private void getChatroomUsers(String chatroomName, HandlerResponse response) {

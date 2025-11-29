@@ -23,9 +23,6 @@ public class Client {
 	private final List<Message> messages = new ArrayList<>();
 	private Instant lastUsage = Instant.now();
 
-	// Messages pending for this user. Chatroom is null for direct messages
-	// from a user. The username is the sending user. The message is obvious.
-	private record Message(String username, String message) {}
 
 	/**
 	 * Add a new client to our list of active clients.
@@ -119,7 +116,7 @@ public class Client {
 	 */
 	public void send(String username, String message) {
 		synchronized (messages) {
-			messages.add(new Message(username, message));
+			messages.add(new Message(username, message, null));
 		}
 	}
 
@@ -133,6 +130,9 @@ public class Client {
 				JSONObject jsonMsg = (new JSONObject())
 						.put("username", msg.username)
 						.put("message", msg.message);
+				if (msg.chatroom() != null){
+					jsonMsg.put("chatroom", msg.chatroom());
+				}
 				jsonMessages.put(jsonMsg);
 			}
 			messages.clear();
@@ -140,4 +140,14 @@ public class Client {
 		updateLastUsage();
 		return jsonMessages;
 	}
+
+	public void sendChatroom(String name, String message, String chatroomName) {
+		synchronized (messages) {
+			messages.add(new Message(name, message, chatroomName));
+		}
+	}
+
+	// Messages pending for this user. Chatroom is null for direct messages
+	// from a user. The username is the sending user. The message is obvious.
+	protected record Message(String username, String message, String chatroom) {}
 }
