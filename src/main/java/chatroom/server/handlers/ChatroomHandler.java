@@ -85,12 +85,61 @@ public class ChatroomHandler extends Handler {
     }
 
     private void getChatroomUsers(String chatroomName, HandlerResponse response) {
+        Chatroom chatroom = Chatroom.findChatroomByName(chatroomName);
+        JSONArray chatroomList = new JSONArray();
+
+        if (chatroom != null){
+            for (Client client : chatroom.getMembers()){
+                chatroomList.put(client.getName());
+            }
+        }
+
+        response.jsonOut.put("users", chatroomList);
     }
 
-    private void leaveChatroom(String token, String chatroomName, HandlerResponse response) {
+    // DT
+    private void leaveChatroom(String token, String chatroomName, HandlerResponse response) throws Exception {
+        Client user = Client.findByToken(token);
+        if (user == null){
+            throw new Exception("User with token does not exist.");
+        }
+
+        Chatroom chatroom = Chatroom.findChatroomByName(chatroomName);
+        if (chatroom == null){
+            response.jsonOut.put("left", false);
+            response.jsonOut.put("error", "Chatroom not found");
+        }
+
+        boolean left = chatroom.removeMember(user);
+        response.jsonOut.put("left",left);
     }
 
-    private void joinChatroom(String token, String chatroomName, HandlerResponse response) {
+    // DT
+    private void joinChatroom(String token, String chatroomName, HandlerResponse response) throws Exception {
+        Client user = Client.findByToken(token);
+        if (user == null){
+            throw new Exception("User with token does not exist.");
+        }
+
+
+        Chatroom chatroom = Chatroom.findChatroomByName(chatroomName);
+        if (chatroom == null){
+            response.jsonOut.put("joined", false);
+            response.jsonOut.put("error", "Chatroom not found");
+            throw new Exception("Chatroom with this name does not exist.");
+        }
+
+        String username = user.getName();
+        ArrayList<Client> members = chatroom.getMembers();
+
+        if (members.stream().anyMatch(member -> member.getName().equals(username))) {
+            response.jsonOut.put("joined", false);
+            throw new Exception("User already in chatroom.");
+        };
+
+
+        boolean joinedChatroom = chatroom.addMember(user);
+        response.jsonOut.put("joined", joinedChatroom);
     }
 
     private void deleteChatroom(String token, String chatroomName, HandlerResponse response) throws Exception {

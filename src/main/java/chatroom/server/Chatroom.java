@@ -48,4 +48,29 @@ public class Chatroom {
     public Client getUser() {
         return user;
     }
+
+
+    public boolean removeMember(Client user) {
+        return members.removeIf(member -> member.getName().equals(user.getName()));
+    }
+
+    public ArrayList<Client> getMembers() {
+        return members;
+    }
+
+    public boolean addMember(Client user) {
+        if (members.stream().anyMatch(member -> member.getName().equals(user.getName()))) {
+            return false;
+        } else {
+            members.add(user);
+            return true;
+        }
+    }
+
+    public static Chatroom findChatroomByName(String chatroomName) {
+        for (Chatroom chatroom : chatrooms){
+            if (chatroom.getChatroomName().equals(chatroomName)) return chatroom;
+        }
+        return null;
+    }
 }
