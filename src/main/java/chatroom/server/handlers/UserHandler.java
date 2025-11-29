@@ -92,13 +92,25 @@ public class UserHandler  extends Handler {
                 throw new Exception("Invalid username or password");
             } else {
                 String token = Account.getToken();
-                Client.add(username, token);
+                if (account.getCachedMessages() != null) {
+                    Client.addCachedClient(username, token, account.getCachedMessages());
+                } else {
+                    Client.add(username, token);
+                }
                 response.jsonOut.put("token", token);
             }
         }
     }
 
     private void logoutUser(String token, HandlerResponse response) {
+        Client clientToLogOut;
+        if ((clientToLogOut = Client.findByToken(token)) != null) {
+            Account accountToLogOut;
+            if ((accountToLogOut = Account.exists(clientToLogOut.getName())) != null) {
+                accountToLogOut.setCachedMessages(clientToLogOut.getMessagesForCache());
+            }
+        }
+
         Client.remove(token);
         response.jsonOut.put("logout", true);
     }
