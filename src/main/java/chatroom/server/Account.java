@@ -30,6 +30,16 @@ public class Account implements Serializable {
 	private String hashedPassword;
 	private Instant lastLogin;
 
+    private List<Client.Message> cachedMessages;
+
+    public List<Client.Message> getCachedMessages() {
+        return cachedMessages;
+    }
+
+    public void setCachedMessages(List<Client.Message> cachedMessages) {
+        this.cachedMessages = cachedMessages;
+    }
+
 	/**
 	 * Add a new account to our list of valid accounts
 	 */
